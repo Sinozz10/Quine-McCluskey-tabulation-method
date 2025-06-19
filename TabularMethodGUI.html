@@ -1,8 +1,6 @@
 <!--
 ->Boolean Minimizer using Quine-McCluskey-Tabulian Method
-->This HTML file provides a user interface for inputting variables, minterms, and don't care terms, and displays the minimized boolean expression.
 ->I used Live Server to test this code.
-->This code is designed to be run in a web browser and does not require any server-side processing.
 ->This code is designed by Yassin Khaled, Group 1, Section 1 **ID: 9610**
 -->
 
@@ -197,6 +195,12 @@
             display: block;
         }
 
+        .info {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
         @media (max-width: 640px) {
             .btn-group {
                 flex-direction: column;
@@ -213,13 +217,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Quine-McCluskey Method-Tabulian Method</h1>
+            <h1>Welcome to THE Boolean Minimizer</h1>
+            <p>Using Quine-McCluskey-Tabulian Method</p>
         </div>
 
         <div class="panel">
             <div class="form-row">
                 <label for="vars">Number of Variables</label>
-                <input type="number" id="vars" min="2" value="2">
+                <input type="number" id="vars" min="2" max="26" value="2">
+                <div class="info">Maximum 26 variables (A-Z)</div>
             </div>
 
             <div class="form-row">
@@ -260,25 +266,31 @@
     </div>
 
     <script>
-        class BooleanMinimizer {
-            constructor(vars, minterms, dontcares = []) {
+        class BooleanMinimizer 
+        {
+            constructor(vars, minterms, dontcares = []) 
+            {
                 this.vars = vars;
                 this.allTerms = [...new Set([...minterms, ...dontcares])];
                 this.minterms = [...new Set(minterms)];
                 this.dontcares = [...new Set(dontcares)];
             }
 
-            toBinary(n) { 
+            toBinary(n) 
+            { 
                 return n.toString(2).padStart(this.vars, '0'); 
             }
             
-            countOnes(bin) { 
+            countOnes(bin) 
+            { 
                 return (bin.match(/1/g) || []).length; 
             }
 
-            canCombine(a, b) {
+            canCombine(a, b) 
+            {
                 let diff = 0;
-                for (let i = 0; i < a.length; i++) {
+                for (let i = 0; i < a.length; i++) 
+                {
                     if (a[i] !== b[i]) {
                         if (a[i] === '-' || b[i] === '-') return false;
                         if (++diff > 1) return false;
@@ -287,11 +299,13 @@
                 return diff === 1;
             }
 
-            combine(a, b) {
+            combine(a, b) 
+            {
                 return a.split('').map((c, i) => c === b[i] ? c : '-').join('');
             }
 
-            generatePrimeImplicants() {
+            generatePrimeImplicants() 
+            {
                 if (!this.allTerms.length) return [];
 
                 let terms = this.allTerms.map(n => ({
@@ -344,7 +358,8 @@
                 return primes;
             }
 
-            findEssential(primes) {
+            findEssential(primes) 
+            {
                 let essential = [];
                 this.minterms.forEach(m => {
                     const covering = primes.filter(p => p.dec.includes(m));
@@ -355,7 +370,8 @@
                 return essential;
             }
 
-            findMinimalCover(primes) {
+            findMinimalCover(primes) 
+            {
                 const essential = this.findEssential(primes);
                 let covered = new Set(essential.flatMap(p => p.dec.filter(d => this.minterms.includes(d))));
 
@@ -383,38 +399,29 @@
                 return selected;
             }
 
-            toAlgebraic(bin, vars) {
+            toAlgebraic(bin, vars) 
+            {
                 return bin.split('').map((bit, i) =>
                     bit === '1' ? vars[i] : bit === '0' ? vars[i] + "'" : ''
                 ).filter(x => x).join('') || '1';
             }
         }
 
-        // Auto-generate variable names
-        function generateVariableNames(count) {
+        function generateVariableNames(count) 
+        {
             const names = [];
             for (let i = 0; i < Math.min(count, 26); i++) {
                 names.push(String.fromCharCode(65 + i));
             }
-            if (count > 26) {
-                let baseIndex = 0;
-                for (let i = 26; i < count; i++) {
-                    const base = String.fromCharCode(65 + (baseIndex % 26));
-                    const suffix = Math.floor(baseIndex / 26);
-                    names.push(base + suffix);
-                    baseIndex++;
-                }
-            }
             return names;
         }
 
-        // Update variable names when count changes
-        function updateVariableNames() {
+        function updateVariableNames() 
+        {
             const count = parseInt(document.getElementById('vars').value) || 3;
             const names = generateVariableNames(count);
             document.getElementById('names').value = names.join(' ');
 
-            // Update max values info
             const maxTerms = Math.pow(2, count) - 1;
             document.getElementById('minterms').placeholder =
                 count <= 4 ? `0,1,3,7 (max: ${maxTerms})` : `example: 0,1,5,30 (max: ${maxTerms})`;
@@ -422,14 +429,27 @@
                 count <= 4 ? `2,5 (max: ${maxTerms})` : `example: 2,4,31 (max: ${maxTerms})`;
         }
 
-        // Initialize and add event listener
+        function enforceVariableLimit()
+        {
+            const input = document.getElementById('vars');
+            let value = parseInt(input.value);
+            
+            if (isNaN(value) || value < 2) {
+                input.value = 2;
+            } else if (value > 26) {
+                input.value = 26;
+            }
+            
+            updateVariableNames();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             updateVariableNames();
         });
         
-        document.getElementById('vars').addEventListener('input', updateVariableNames);
+        document.getElementById('vars').addEventListener('input', enforceVariableLimit);
+        document.getElementById('vars').addEventListener('change', enforceVariableLimit);
 
-        // Event handlers for sum display
         document.getElementById('minterms').addEventListener('input', function(e) {
             document.getElementById('m-sum').textContent =
                 `(${e.target.value.split(',').map(x => x.trim()).filter(x => x).join(',')})`;
@@ -440,7 +460,8 @@
                 `(${e.target.value.split(',').map(x => x.trim()).filter(x => x).join(',')})`;
         });
 
-        function calculate() {
+        function calculate() 
+        {
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = '';
 
@@ -448,19 +469,15 @@
                 const vars = parseInt(document.getElementById('vars').value);
                 const names = generateVariableNames(vars);
                 
-                // Parse minterms
                 const mintermStr = document.getElementById('minterms').value.trim();
                 const minterms = mintermStr ? mintermStr.split(',')
                     .map(x => parseInt(x.trim())).filter(x => !isNaN(x)) : [];
                 
-                // Parse don't cares
                 const dontcareStr = document.getElementById('dontcares').value.trim();
                 const dontcares = dontcareStr ? dontcareStr.split(',')
                     .map(x => parseInt(x.trim())).filter(x => !isNaN(x)) : [];
 
-                // Validation
-                if (vars < 2) throw new Error('Need at least 2 variables');
-                if (vars > 10) throw new Error('Maximum 10 variables supported for performance');
+                if (vars < 2 || vars > 26) throw new Error('Variables must be between 2 and 26');
                 if (!minterms.length) throw new Error('Enter at least one minterm');
 
                 const maxTerm = Math.pow(2, vars) - 1;
@@ -469,7 +486,6 @@
                     throw new Error(`Invalid terms: ${invalidTerms.join(',')}. Range: 0-${maxTerm}`);
                 }
 
-                // Check for overlapping terms
                 const overlap = minterms.filter(m => dontcares.includes(m));
                 if (overlap.length) {
                     throw new Error(`Terms cannot be both minterms and don't cares: ${overlap.join(',')}`);
@@ -487,7 +503,8 @@
             }
         }
 
-        function displayResults(qm, names, primes, essential, minimal) {
+        function displayResults(qm, names, primes, essential, minimal) 
+        {
             const results = document.getElementById('results');
             results.style.display = 'block';
 
@@ -500,7 +517,8 @@
                     <p><strong>Prime Implicants:</strong> ${primes.length}</p>
                 </div>`;
 
-            if (primes.length) {
+            if (primes.length) 
+            {
                 html += `
                     <div class="result-section">
                         <h3>All Prime Implicants</h3>
@@ -513,7 +531,7 @@
                         <td>${p.dec.join(',')}</td>
                         <td>${p.bin}</td>
                         <td>${qm.toAlgebraic(p.bin, names)}</td>
-                        <td>${isEss ? 'Essential' : 'Non-Essential'}</td>
+                        <td>${isEss ? 'Essential' : 'Not Essential'}</td>
                     </tr>`;
                 });
 
@@ -528,36 +546,31 @@
                         </div>`;
                 }
             } else {
-                html += '<div class="result-section"><p style="color:#dc2626">No prime implicants found</p></div>';
+                html += '<div class="result-section"><p style="color:#dc2626">No PIs found</p></div>';
             }
 
             results.innerHTML = html;
         }
 
-        function clearForm() {
-            // Clear all input fields
+        function clearForm() 
+        {
             document.getElementById('vars').value = 3;
             document.getElementById('minterms').value = '';
             document.getElementById('dontcares').value = '';
             
-            // Clear all display elements
             document.getElementById('m-sum').textContent = '()';
             document.getElementById('d-sum').textContent = '()';
             document.getElementById('error').textContent = '';
             
-            // Hide results section
             const results = document.getElementById('results');
             results.style.display = 'none';
             results.innerHTML = '';
             
-            // Update variable names and placeholders
             updateVariableNames();
             
-            // Force focus away from any input to ensure clean state
             document.activeElement.blur();
         }
 
-        // Test with sample data
         function loadSample() {
             document.getElementById('vars').value = 4;
             document.getElementById('minterms').value = '0,1,3,7,15';
